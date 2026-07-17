@@ -1,0 +1,10 @@
+# API Key Setup
+
+To use the AI features in StudyGenie, follow these steps:
+
+1. Create a file named 'local.properties' in the root directory.
+2. Add the following line to that file:
+   GEMINI_API_KEY=YOUR_API_KEY_HERE
+
+Replace 'YOUR_API_KEY_HERE' with your actual key from Google AI Studio.
+This file (local.properties) is ignored by Git to keep your key secure.
