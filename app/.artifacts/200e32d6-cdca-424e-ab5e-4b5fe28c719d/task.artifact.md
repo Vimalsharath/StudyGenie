@@ -1,8 +1,10 @@
-# AI Migration Tasks
+# Tasks: Planner UI/UX Enhancement
 
-- [x] Configure `local.properties` with API Key
-- [x] Update `libs.versions.toml` (SDK swap)
-- [x] Configure `app/build.gradle.kts` for `BuildConfig`
-- [x] Refactor `AiRepository.kt` to Google AI Studio SDK
-- [x] Update `AiConfig.kt` (Cleanup)
-- [x] Verify Build & AI connectivity
+- [/] Planner Screen Styling
+    - [ ] Add Gradient Header to `PlannerScreen.kt`
+    - [ ] Wrap inputs in `ElevatedCard`
+    - [ ] Implement vibrant selected states for Priority chips
+- [/] Task Card Upgrade
+    - [ ] Add vertical priority indicator strip to `TaskCard.kt`
+    - [ ] Polish spacing and action buttons
+- [ ] Final Verification (Color & Dark Mode check)

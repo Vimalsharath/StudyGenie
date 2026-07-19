@@ -7,7 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,8 +28,10 @@ fun FocusScreen(
     viewModel: PomodoroViewModel = viewModel()
 ) {
     val timeLeft by viewModel.timeLeft.collectAsState()
+    val initialTime by viewModel.initialTime.collectAsState()
     val timerState by viewModel.timerState.collectAsState()
-    val progress = timeLeft.toFloat() / (25 * 60f)
+    
+    val progress = if (initialTime > 0) timeLeft.toFloat() / initialTime else 0f
 
     Scaffold(
         topBar = {
@@ -55,9 +57,13 @@ fun FocusScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(300.dp)
             ) {
-                // Background Circle
+                // Background Circle (Track)
                 val trackColor = MaterialTheme.colorScheme.surfaceVariant
-                val progressColor = MaterialTheme.colorScheme.tertiary
+                val progressColor = when (timerState) {
+                    TimerState.FINISHED -> MaterialTheme.colorScheme.primary
+                    TimerState.RUNNING -> MaterialTheme.colorScheme.tertiary
+                    else -> MaterialTheme.colorScheme.secondary
+                }
 
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawCircle(
@@ -75,14 +81,20 @@ fun FocusScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = viewModel.formatTime(timeLeft),
+                        text = if (timerState == TimerState.FINISHED) "DONE!" else viewModel.formatTime(timeLeft),
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontSize = 64.sp,
                             fontWeight = FontWeight.Bold
-                        )
+                        ),
+                        color = if (timerState == TimerState.FINISHED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (timerState == TimerState.RUNNING) "FOCUSING" else "READY",
+                        text = when (timerState) {
+                            TimerState.RUNNING -> "FOCUSING..."
+                            TimerState.PAUSED -> "PAUSED"
+                            TimerState.FINISHED -> "SESSION COMPLETE"
+                            else -> "READY TO START"
+                        },
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -90,6 +102,22 @@ fun FocusScreen(
             }
 
             Spacer(modifier = Modifier.height(60.dp))
+
+            // Timer Presets
+            if (timerState == TimerState.IDLE) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 32.dp)
+                ) {
+                    listOf(15, 25, 45, 60).forEach { mins ->
+                        SuggestionChip(
+                            onClick = { viewModel.setSessionTime(mins) },
+                            label = { Text("${mins}m") },
+                            icon = { Icon(Icons.Default.Timer, null, modifier = Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -111,7 +139,10 @@ fun FocusScreen(
                     },
                     modifier = Modifier.size(80.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary
+                        containerColor = if (timerState == TimerState.RUNNING) 
+                            MaterialTheme.colorScheme.secondary 
+                        else 
+                            MaterialTheme.colorScheme.tertiary
                     )
                 ) {
                     Icon(
@@ -120,23 +151,12 @@ fun FocusScreen(
                         modifier = Modifier.size(40.dp)
                     )
                 }
-
-                // Placeholder for music/sounds
-                OutlinedIconButton(
-                    onClick = { /* Sound Settings */ },
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.VolumeUp, 
-                        contentDescription = "Sounds"
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(40.dp))
             
             Text(
-                text = "Session: 25 mins",
+                text = "Session Goal: ${initialTime / 60} minutes",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

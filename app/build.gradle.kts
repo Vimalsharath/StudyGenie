@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.google.gemini)
+    implementation(libs.google.material)
 
     // Room
     implementation(libs.androidx.room.runtime)

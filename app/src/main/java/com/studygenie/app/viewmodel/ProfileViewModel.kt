@@ -8,8 +8,8 @@ import com.studygenie.app.data.local.UserEntity
 import com.studygenie.app.data.model.Task
 import com.studygenie.app.repository.AuthRepository
 import com.studygenie.app.repository.TaskRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 data class ProfileState(
     val user: UserEntity? = null,
@@ -19,30 +19,34 @@ data class ProfileState(
     val completionRate: Int = 0,
     val totalStudyHours: Float = 0f,
     val productivityScore: Int = 0,
-    val strongestSubject: String = "N/A",
-    val mostProductiveDay: String = "N/A"
+    val strongestSubject: String = "N/A"
 )
 
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
-    private val authRepository: AuthRepository
-    private val taskRepository: TaskRepository
     
-    private val _profileState = MutableStateFlow(ProfileState())
-    val profileState: StateFlow<ProfileState> = _profileState
-
-    init {
+    private val authRepository: AuthRepository by lazy {
         val database = AppDatabase.getDatabase(application)
-        authRepository = AuthRepository(database.userDao())
-        taskRepository = TaskRepository(database.taskDao())
+        AuthRepository(database.userDao())
+    }
+    
+    private val taskRepository: TaskRepository by lazy {
+        val database = AppDatabase.getDatabase(application)
+        TaskRepository(database.taskDao())
+    }
 
+    val profileState: StateFlow<ProfileState> by lazy {
         combine(
             authRepository.currentUser?.let { authRepository.getLocalUser(it.uid) } ?: flowOf(null),
             taskRepository.allTasks
         ) { user, tasks ->
             calculateProfileState(user, tasks)
-        }.onEach { state ->
-            _profileState.value = state
-        }.launchIn(viewModelScope)
+        }
+        .flowOn(Dispatchers.IO)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ProfileState()
+        )
     }
 
     private fun calculateProfileState(user: UserEntity?, tasks: List<Task>): ProfileState {
@@ -51,8 +55,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val completed = tasks.count { it.isCompleted }
         val total = tasks.size
         val rate = if (total > 0) (completed.toFloat() / total * 100).toInt() else 0
-        
-        // Mocking study hours for now (e.g., 1 hour per completed task)
         val hours = completed * 1.5f 
         
         val subjectBreakdown = tasks.groupBy { it.subject }.mapValues { it.value.size }
@@ -65,14 +67,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             pendingTasks = total - completed,
             completionRate = rate,
             totalStudyHours = hours,
-            productivityScore = rate, // Using rate as initial score
+            productivityScore = rate,
             strongestSubject = strongest
         )
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            authRepository.logout()
-        }
     }
 }

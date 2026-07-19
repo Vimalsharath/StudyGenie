@@ -1,29 +1,29 @@
 package com.studygenie.app.presentation.navigation
+
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
-import com.studygenie.app.presentation.screens.LoginScreen
-import com.studygenie.app.presentation.screens.RegisterScreen
-import com.studygenie.app.presentation.screens.SplashScreen
-
+import com.studygenie.app.presentation.screens.*
 import com.studygenie.app.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun AppNavigation(viewModel: AuthViewModel = viewModel()) {
-
     val navController = rememberNavController()
-    val isLoggedIn = viewModel.currentUser != null
 
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) "home" else "login"
+        startDestination = "splash"
     ) {
-
         composable("splash") {
-            SplashScreen()
+            SplashScreen(
+                onNavigateNext = { destination ->
+                    navController.navigate(destination) {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable("login") {
@@ -63,5 +63,4 @@ fun AppNavigation(viewModel: AuthViewModel = viewModel()) {
             )
         }
     }
-
 }

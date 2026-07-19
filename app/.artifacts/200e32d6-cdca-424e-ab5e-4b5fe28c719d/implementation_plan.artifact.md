@@ -1,55 +1,34 @@
-# Implementation Plan: Migrate AI Module to Google AI Studio SDK
+# Implementation Plan: Planner UI/UX & Theming Enhancement
 
-Completely remove Firebase AI Logic and Vertex AI dependencies. Migrate to the official Google AI Studio SDK using the `gemini-2.0-flash` model and secure API key management.
-
-## User Review Required
-
-> [!IMPORTANT]
-> - **API Key Security**: The API key will be moved to `local.properties`. You MUST ensure your `local.properties` file contains the key after this migration if you are running this on a new machine.
-> - **Model Version**: I am setting the model to `gemini-2.0-flash`. If you encounter a "Model Not Found" error, it may be because the 2.0 model is still in experimental/early access for your region; in that case, we can fallback to `gemini-1.5-flash`.
+Enhance the `PlannerScreen` with vibrant colors, improved hierarchy, and distinct priority styling to create a premium "StudyGenie" experience.
 
 ## Proposed Changes
 
-### Build Configuration & Dependencies
+### 1. Planner Screen Styling
+#### [MODIFY] [PlannerScreen.kt](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/app/src/main/java/com/studygenie/app/presentation/screens/PlannerScreen.kt)
+- **Gradient Header**: Add a professional gradient background behind the "Study Planner" title.
+- **Input Grouping**: Wrap the input fields in an `ElevatedCard` with a slightly different background color to separate "Planning" from the "List".
+- **Vibrant Priority Chips**:
+    - High: Red background when selected.
+    - Medium: Amber background when selected.
+    - Low: Emerald/Green background when selected.
+- **Dynamic Icons**: Add tinting to the Calendar and Clock icons to match the primary theme.
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/gradle/libs.versions.toml)
-- Remove `firebase-ai` library.
-- Add `google-gemini = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "gemini" }`.
-- Ensure `gemini = "0.9.0"` is present.
+### 2. Task Card Premium Upgrade
+#### [MODIFY] [TaskCard.kt](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/app/presentation/components/TaskCard.kt)
+- **Priority Indicator**: Add a vertical colored strip on the left edge of the card (Red/Yellow/Green) to show priority at a glance.
+- **Improved Spacing**: Refine padding and text styles for better readability.
+- **Action Buttons**: Use `FilledTonalIconButton` for the "Complete" action to make it feel more interactive.
 
-#### [MODIFY] [build.gradle.kts](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/app/build.gradle.kts)
-- Enable `buildConfig = true`.
-- Add logic to read `GEMINI_API_KEY` from `local.properties`.
-- Add `buildConfigField` for `GEMINI_API_KEY`.
-- Replace `libs.firebase.ai` with `libs.google.gemini`.
-
-#### [MODIFY] [local.properties](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/local.properties)
-- Add `GEMINI_API_KEY=AQ...` (using the provided key).
-
----
-
-### AI Module Refactoring
-
-#### [MODIFY] [AiRepository.kt](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/app/src/main/java/com/studygenie/app/repository/AiRepository.kt)
-- Remove all `com.google.firebase.ai` and `com.google.firebase.Firebase` imports.
-- Add `com.google.ai.client.generativeai.*` imports.
-- Update `GenerativeModel` initialization to use `BuildConfig.GEMINI_API_KEY` and `modelName = "gemini-2.0-flash"`.
-- Clean up the error handling logic to map HTTP 401, 403, 404, 429 to user-friendly messages.
-
-#### [MODIFY] [AiConfig.kt](file:///C:/Users/sharath%20V/AndroidStudioProjects/StudyGenie/app/src/main/java/com/studygenie/app/data/remote/AiConfig.kt)
-- Remove the hardcoded API key constant as it will now be in `BuildConfig`.
+### 3. Theme Consistency
+- Ensure all custom colors (Red/Amber/Green) use the theme's color palette where possible or consistent hex codes for branding.
 
 ---
 
-### Verification Plan
-
-### Automated Tests
-- Run `gradle :app:assembleDebug` to verify the build and `BuildConfig` generation.
+## Verification Plan
 
 ### Manual Verification
-- Deploy the app and test the AI chat.
-- Verify that "gemini-2.0-flash" is responding correctly.
-- intentionally invalidate the API key in `local.properties` to verify the 401 error handling.
-
-## New Feature Suggestion: **Smart Flashcard Generator**
-Add a feature that allows students to highlight or paste a block of study text, and AI automatically generates a set of Question-Answer flashcards that can be saved to a local Room database for later review.
+1.  **Visual Audit**: Verify the Planner screen now has a distinct "Header" area.
+2.  **Chip Feedback**: Tap each priority chip and verify the color matches (Red for High, etc.).
+3.  **Card Layout**: Verify the new "Priority Strip" appears correctly on the left of each task.
+4.  **Dark Mode**: Ensure the new colors have sufficient contrast in Dark Mode.

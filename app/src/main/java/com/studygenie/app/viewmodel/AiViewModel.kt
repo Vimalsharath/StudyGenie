@@ -3,9 +3,11 @@ package com.studygenie.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studygenie.app.repository.AiRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class ChatMessage(
@@ -13,17 +15,17 @@ data class ChatMessage(
     val isUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
     val isError: Boolean = false,
-    val isQuotaError: Boolean = false // New flag
+    val isQuotaError: Boolean = false
 )
 
 class AiViewModel : ViewModel() {
-    private val repository = AiRepository()
+    private val repository: AiRepository by lazy { AiRepository() }
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages
+    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     fun sendMessage(text: String, isRetry: Boolean = false) {
         if (text.isBlank()) return
@@ -33,7 +35,7 @@ class AiViewModel : ViewModel() {
             _messages.value = _messages.value + userMessage
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             val result = repository.getAiResponse(text)
             
@@ -44,7 +46,6 @@ class AiViewModel : ViewModel() {
                 val isQuota = error.message?.contains("Quota") == true
                 
                 if (isQuota && !isRetry) {
-                    // Auto-retry once after a delay
                     delay(2000)
                     sendMessage(text, isRetry = true)
                     return@launch
@@ -65,18 +66,5 @@ class AiViewModel : ViewModel() {
     fun clearChat() {
         _messages.value = emptyList()
         repository.resetChat()
-    }
-
-    fun regenerateLastResponse() {
-        val lastUserMessage = _messages.value.lastOrNull { it.isUser }
-        if (lastUserMessage != null) {
-            // Remove last AI message if it exists and was an error or the very last one
-            val currentMessages = _messages.value.toMutableList()
-            if (currentMessages.isNotEmpty() && !currentMessages.last().isUser) {
-                currentMessages.removeAt(currentMessages.size - 1)
-                _messages.value = currentMessages
-            }
-            sendMessage(lastUserMessage.text)
-        }
     }
 }
